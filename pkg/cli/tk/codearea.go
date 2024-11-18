@@ -51,6 +51,10 @@ type CodeAreaSpec struct {
 
 	// State. When used in New, this field specifies the initial state.
 	State CodeAreaState
+
+	// Add suggestion-related fields
+	Suggester       func(code string) string
+	SuggestionStyle ui.Style // Style for rendering suggestions
 }
 
 // CodeAreaState keeps the mutable state of the CodeArea widget.
@@ -59,6 +63,10 @@ type CodeAreaState struct {
 	Pending     PendingCode
 	HideRPrompt bool
 	HideTips    bool
+
+	// Add these new fields
+	Suggestion     string // The current suggestion text
+	ShowSuggestion bool   // Whether to show suggestions
 }
 
 // CodeBuffer represents the buffer of the CodeArea widget.
@@ -175,7 +183,21 @@ func (w *codeArea) Handle(event term.Event) bool {
 	case term.PasteSetting:
 		return w.handlePasteSetting(bool(event))
 	case term.KeyEvent:
-		return w.handleKeyEvent(ui.Key(event))
+		key := ui.Key(event)
+
+		// Handle suggestions
+		switch {
+		// Accept suggestion with right arrow when at end of line
+		case key.Rune == ui.Right:
+			if w.State.Buffer.Dot == len(w.State.Buffer.Content) {
+				w.AcceptSuggestion()
+				return true
+			}
+		}
+
+		// Update suggestions after handling the key
+		defer w.UpdateSuggestion()
+		return w.handleKeyEvent(key)
 	}
 	return false
 }
@@ -408,4 +430,25 @@ func CategorizeSmallWord(r rune) int {
 	default:
 		return 2
 	}
+}
+
+// Add methods to handle suggestion-related actions
+func (w *codeArea) AcceptSuggestion() {
+	if w.State.ShowSuggestion && w.State.Suggestion != "" {
+		w.MutateState(func(s *CodeAreaState) {
+			s.Buffer.InsertAtDot(s.Suggestion)
+			s.Suggestion = ""
+		})
+	}
+}
+
+func (w *codeArea) UpdateSuggestion() {
+	if w.CodeAreaSpec.Suggester == nil {
+		return
+	}
+
+	suggestion := w.CodeAreaSpec.Suggester(w.State.Buffer.Content)
+	w.MutateState(func(s *CodeAreaState) {
+		s.Suggestion = suggestion
+	})
 }

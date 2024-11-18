@@ -129,6 +129,8 @@ func NewApp(spec AppSpec) App {
 	lp.HandleCb(a.handle)
 	lp.RedrawCb(a.redraw)
 
+	suggester := NewHistorySuggester(1000)
+
 	a.codeArea = tk.NewCodeArea(tk.CodeAreaSpec{
 		Bindings:    spec.CodeAreaBindings,
 		Highlighter: a.Highlighter.Get,
@@ -141,6 +143,13 @@ func NewApp(spec AppSpec) App {
 		SimpleAbbreviations:    spec.SimpleAbbreviations,
 		CommandAbbreviations:   spec.CommandAbbreviations,
 		SmallWordAbbreviations: spec.SmallWordAbbreviations,
+		Suggester:              suggester.Get,
+		SuggestionStyle: ui.Style{
+			Fg:   ui.XTerm256Color(242), // Light gray
+			Bg:   ui.XTerm256Color(238), // Dark gray
+			Bold: false,
+			Dim:  true,
+		},
 	})
 
 	return &a

@@ -27,6 +27,8 @@ type AppSpec struct {
 
 	CodeAreaState tk.CodeAreaState
 	State         State
+
+	Suggester Suggester
 }
 
 // Highlighter represents a code highlighter whose result can be delivered
@@ -69,3 +71,20 @@ type constPrompt struct{ Content ui.Text }
 func (constPrompt) Trigger(force bool)           {}
 func (p constPrompt) Get() ui.Text               { return p.Content }
 func (constPrompt) LateUpdates() <-chan struct{} { return nil }
+
+// Suggester represents an autosuggestion provider whose results can be delivered
+// asynchronously, similar to fish shell's behavior
+type Suggester interface {
+	// Get returns a suggestion for the current input.
+	// Returns empty string if no suggestion is available.
+	Get(code string) string
+	// LateUpdates returns a channel for delivering asynchronous updates,
+	// similar to how Highlighter and Prompt work
+	LateUpdates() <-chan struct{}
+}
+
+// A basic Suggester implementation that doesn't provide suggestions
+type dummySuggester struct{}
+
+func (dummySuggester) Get(code string) string       { return "" }
+func (dummySuggester) LateUpdates() <-chan struct{} { return nil }

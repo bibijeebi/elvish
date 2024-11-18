@@ -6,22 +6,34 @@
   outputs = {
     self,
     nixpkgs,
-  }: {
-    packages.x86_64-linux = {
-      elvish = nixpkgs.legacyPackages.x86_64-linux.callPackage ./package.nix {};
+  }: let
+    system = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
+    packages.${system} = {
+      elvish = pkgs.callPackage ./package.nix {};
+      default = self.packages.${system}.elvish;
     };
-    devShells.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.mkShell {
-      inputsFrom = [self.packages.x86_64-linux.elvish];
-      buildInputs = [
-        self.packages.x86_64-linux.elvish
-        nixpkgs.legacyPackages.x86_64-linux.go
-        nixpkgs.legacyPackages.x86_64-linux.gopls
-        nixpkgs.legacyPackages.x86_64-linux.go-tools
-        nixpkgs.legacyPackages.x86_64-linux.gofumpt
-        nixpkgs.legacyPackages.x86_64-linux.gopls
-        nixpkgs.legacyPackages.x86_64-linux.gopls-jsonrpc
-        nixpkgs.legacyPackages.x86_64-linux.gopls-plugins
+
+    devShells.${system}.default = pkgs.mkShell {
+      inputsFrom = [self.packages.${system}.elvish];
+      buildInputs = with pkgs; [
+        go
+        gopls
+        go-tools
+        gofumpt
+        make
       ];
+
+      # Add these environment variables for Go development
+      shellHook = ''
+        export GOPATH="$PWD/.go"
+        export GOBIN="$GOPATH/bin"
+        export PATH="$GOBIN:$PATH"
+
+        # For plugin development (optional)
+        export CGO_ENABLED=1
+      '';
     };
   };
 }
