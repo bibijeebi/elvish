@@ -27,6 +27,9 @@ func (hs *HistorySuggester) AddHistory(cmd string) {
 	hs.mu.Lock()
 	defer hs.mu.Unlock()
 
+	// Debug print
+	println("Adding to history:", cmd)
+
 	// Don't add empty commands or duplicates of the last command
 	if cmd == "" || (len(hs.history) > 0 && hs.history[len(hs.history)-1] == cmd) {
 		return
@@ -34,6 +37,9 @@ func (hs *HistorySuggester) AddHistory(cmd string) {
 
 	// Add new command
 	hs.history = append(hs.history, cmd)
+
+	// Debug print
+	println("History length:", len(hs.history))
 
 	// Trim history if it exceeds max length
 	if len(hs.history) > hs.maxHistoryLen {
@@ -50,19 +56,27 @@ func (hs *HistorySuggester) AddHistory(cmd string) {
 // Get implements the Suggester interface
 func (hs *HistorySuggester) Get(code string) string {
 	if code == "" {
+		println("Empty code, no suggestion")
 		return ""
 	}
 
 	hs.mu.RLock()
 	defer hs.mu.RUnlock()
 
+	print("Searching history for:", code)
+	print("History length:", len(hs.history))
+
 	// Search history in reverse order (newest first)
 	for i := len(hs.history) - 1; i >= 0; i-- {
+		print("Checking history entry:", hs.history[i])
 		if strings.HasPrefix(hs.history[i], code) {
-			return hs.history[i][len(code):]
+			suggestion := hs.history[i][len(code):]
+			print("Found suggestion:", suggestion)
+			return suggestion
 		}
 	}
 
+	print("No suggestion found")
 	return ""
 }
 

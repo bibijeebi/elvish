@@ -130,6 +130,11 @@ func NewApp(spec AppSpec) App {
 	lp.RedrawCb(a.redraw)
 
 	suggester := NewHistorySuggester(1000)
+	println("Created new history suggester")
+	spec.AfterReadline = append(spec.AfterReadline, func(s string) {
+		println("AfterReadline called with:", s)
+		suggester.AddHistory(s)
+	})
 
 	a.codeArea = tk.NewCodeArea(tk.CodeAreaSpec{
 		Bindings:    spec.CodeAreaBindings,
@@ -143,10 +148,15 @@ func NewApp(spec AppSpec) App {
 		SimpleAbbreviations:    spec.SimpleAbbreviations,
 		CommandAbbreviations:   spec.CommandAbbreviations,
 		SmallWordAbbreviations: spec.SmallWordAbbreviations,
-		Suggester:              suggester.Get,
+		Suggester: func(code string) string {
+			println("Suggester called with:", code)
+			sugg := suggester.Get(code)
+			println("Suggestion returned:", sugg)
+			return sugg
+		},
 		SuggestionStyle: ui.Style{
-			Fg:   ui.XTerm256Color(242), // Light gray
-			Bg:   ui.XTerm256Color(238), // Dark gray
+			Fg:   ui.XTerm256Color(242),
+			Bg:   ui.XTerm256Color(238),
 			Bold: false,
 			Dim:  true,
 		},

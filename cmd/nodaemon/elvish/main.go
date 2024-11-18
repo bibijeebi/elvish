@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"src.elv.sh/pkg/buildinfo"
-	"src.elv.sh/pkg/lsp"
 	"src.elv.sh/pkg/prog"
 	"src.elv.sh/pkg/shell"
 )
@@ -14,5 +13,5 @@ import (
 func main() {
 	os.Exit(prog.Run(
 		[3]*os.File{os.Stdin, os.Stdout, os.Stderr}, os.Args,
-		prog.Composite(&buildinfo.Program{}, &lsp.Program{}, &shell.Program{})))
+		prog.Composite(&buildinfo.Program{}, &shell.Program{})))
 }
